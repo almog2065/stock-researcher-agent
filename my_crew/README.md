@@ -1,54 +1,186 @@
-# MyCrew Crew
+# Stock Research Crew
 
-Welcome to the MyCrew Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+An AI-powered investment research system built with [CrewAI](https://crewai.com). Three specialised agents collaborate to produce a professional HTML investment report for any publicly traded stock — combining live web search data, real-time price history, and LLM-generated analysis.
 
-## Installation
+---
 
-Ensure you have Python >=3.10 <3.14 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+## Overview
 
-First, if you haven't already, install uv:
-
-```bash
-pip install uv
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Stock Research Crew                  │
+│                                                         │
+│  🔍 Python pre-fetches DuckDuckGo search results        │
+│                        │                               │
+│  ┌─────────────────────▼──────────────────────────┐    │
+│  │  Agent 1 — Fundamental Research Analyst        │    │
+│  │  Summarises live news, earnings, analyst        │    │
+│  │  consensus, insider activity & catalysts        │    │
+│  └─────────────────────┬──────────────────────────┘    │
+│                        │                               │
+│  ┌─────────────────────▼──────────────────────────┐    │
+│  │  Agent 2 — Technical Analysis Specialist       │    │
+│  │  Uses StockDataTool (yfinance) to analyse       │    │
+│  │  price action across 9 time periods + MAs       │    │
+│  └─────────────────────┬──────────────────────────┘    │
+│                        │                               │
+│  ┌─────────────────────▼──────────────────────────┐    │
+│  │  Agent 3 — Investment Research Summariser      │    │
+│  │  Synthesises both analyses into executive       │    │
+│  │  summary, outlook, and key risks                │    │
+│  └─────────────────────┬──────────────────────────┘    │
+│                        │                               │
+│  🎨 Python renders professional HTML report            │
+│     (layout, tables & styling done in code,            │
+│      not delegated to the LLM)                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
-Next, navigate to your project directory and install the dependencies:
+---
 
-(Optional) Lock the dependencies and install them by using the CLI command:
+## Features
+
+- **Live web search** — DuckDuckGo queries are pre-fetched in Python and injected into the fundamental agent's prompt (no API key required), making it work reliably with any local LLM
+- **Real-time stock data** — yfinance provides OHLCV data for **9 time periods**: 1W · 1M · 3M · 6M · YTD · 1Y · 2Y · 3Y · 5Y
+- **Moving averages** — 50-day and 200-day MAs with Golden Cross / Death Cross signal
+- **Key fundamentals** — Market Cap, P/E (TTM & Forward), 52-Week High/Low, Beta, Dividend Yield
+- **Code-rendered HTML** — The report layout, price table, and metric cards are generated entirely in Python (`html_report.py`), guaranteeing quality regardless of LLM size
+- **Three agent sections** — Each agent's output is displayed in its own clearly labelled card
+- **Progress logging** — Timestamped console output shows crew progress in real time
+- **Local LLM support** — Runs on Ollama (no cloud API required)
+
+---
+
+## Report Output
+
+The generated `stock_report.html` includes:
+
+| Section | Source |
+|---|---|
+| Header + Metric Strip (8 KPIs) | yfinance — live data |
+| Fundamental Analysis | Agent 1 — LLM summary of DuckDuckGo results |
+| Technical Analysis — 9-period price table | yfinance — live data (Python-rendered) |
+| Moving Averages + Key Price Levels | yfinance — live data |
+| Technical Narrative | Agent 2 — LLM synthesis |
+| Investment Outlook & Risks | Agent 3 — LLM synthesis |
+
+---
+
+## Requirements
+
+- Python 3.10–3.13
+- [Ollama](https://ollama.com) running locally
+
+---
+
+## Setup
+
+### 1. Install dependencies
+
 ```bash
-crewai install
+uv sync
 ```
-### Customizing
 
-**Add your `OPENAI_API_KEY` into the `.env` file**
+### 2. Configure environment variables
 
-- Modify `src/my_crew/config/agents.yaml` to define your agents
-- Modify `src/my_crew/config/tasks.yaml` to define your tasks
-- Modify `src/my_crew/crew.py` to add your own logic, tools and specific args
-- Modify `src/my_crew/main.py` to add custom inputs for your agents and tasks
+Add the following to your shared `.env` file (loaded by `main.py`):
 
-## Running the Project
+```env
+# LLM — Ollama local model
+OLLAMA_URL=http://localhost:11434/v1
+OLLAMA_MODEL=openai/llama3.2:3b
+OLLAMA_API_KEY=ollama
+```
 
-To kickstart your crew of AI agents and begin task execution, run this from the root folder of your project:
+### 3. Pull the Ollama model
 
 ```bash
-$ crewai run
+ollama pull llama3.2:3b
 ```
 
-This command initializes the my_crew Crew, assembling the agents and assigning them tasks as defined in your configuration.
+### 4. Start Ollama (if not already running)
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
+```bash
+ollama serve
+```
 
-## Understanding Your Crew
+---
 
-The my_crew Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
+## Usage
 
-## Support
+```bash
+# Run the crew (default: Apple Inc / AAPL)
+uv run my_crew
+```
 
-For support, questions, or feedback regarding the MyCrew Crew or crewAI.
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
+The report is written to `stock_report.html` in the project root. Open it in any browser.
 
-Let's create wonders together with the power and simplicity of crewAI.
+### Other commands
+
+```bash
+uv run train      # Train the crew for N iterations
+uv run replay     # Replay from a specific task ID
+uv run test       # Run evaluation test
+```
+
+---
+
+## Project Structure
+
+```
+my_crew/
+├── src/my_crew/
+│   ├── main.py                 # Entry point — DuckDuckGo pre-fetch, crew kickoff, HTML generation
+│   ├── crew.py                 # Agent and task definitions
+│   ├── html_report.py          # Python HTML report generator (yfinance + agent outputs)
+│   ├── config/
+│   │   ├── agents.yaml         # Agent roles, goals, and backstories
+│   │   └── tasks.yaml          # Task descriptions and expected outputs
+│   └── tools/
+│       └── stock_data_tool.py  # CrewAI tool wrapping yfinance (9 periods + MAs)
+├── stock_report.html           # Generated output
+├── pyproject.toml
+└── README.md
+```
+
+---
+
+## Customising the Target Stock
+
+Edit the `inputs` dict in `main.py`:
+
+```python
+inputs = {
+    'company': 'Microsoft Corporation',
+    'stock_symbol': 'MSFT',
+    'current_date': datetime.now().strftime("%Y-%m-%d"),
+}
+```
+
+---
+
+## Architecture Notes
+
+### Why search results are pre-fetched in Python
+
+Small local models (e.g. `llama3.2:3b`) do not reliably follow CrewAI's ReAct tool-calling pattern — they output a JSON tool description as their final answer instead of actually invoking the tool. To work around this, `main.py` uses `ddgs` (DuckDuckGo Search) to fetch results before the crew starts and injects them into the fundamental agent's prompt as plain text. The agent only needs to summarise, not call tools. DuckDuckGo requires no API key.
+
+### Why HTML is generated in Python
+
+Delegating HTML generation to a small LLM produces inconsistent, often malformed output. Instead, `html_report.py` renders the full report using Python string templating and live yfinance data. Agent outputs are passed in as plain text and formatted with a simple text-to-HTML converter, guaranteeing a professional result every time.
+
+---
+
+## Dependencies
+
+| Package | Purpose |
+|---|---|
+| `crewai[tools]` | Multi-agent orchestration framework |
+| `yfinance` | Real-time and historical stock data |
+| `ddgs` | DuckDuckGo web search (free, no API key) |
+
+---
+
+## License
+
+MIT

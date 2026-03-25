@@ -1,17 +1,65 @@
-research_task:
+fundamental_task:
   description: >
-    Conduct a thorough research about {topic}
-    Make sure you find any interesting and relevant information given
-    the current year is {current_year}.
-  expected_output: >
-    A list with 10 bullet points of the most relevant information about {topic}
-  agent: researcher
+    You are provided with live search results about {company} ({stock_symbol})
+    fetched on {current_date}. Summarise ONLY what is in the search results below.
+    Do NOT invent or assume any information not present in the data.
+    Organise your summary into these sections:
+    1. Latest News & Press Releases
+    2. Earnings Results (revenue, EPS, date, vs. expectations)
+    3. Analyst Consensus (rating, price targets)
+    4. Insider Activity (names, shares, dates if available)
+    5. Upcoming Catalysts
+    6. Key Risks
 
-reporting_task:
-  description: >
-    Review the context you got and expand each topic into a full section for a report.
-    Make sure the report is detailed and contains any and all relevant information.
+    --- SEARCH RESULTS START ---
+    {search_results}
+    --- SEARCH RESULTS END ---
   expected_output: >
-    A fully fledged report with the main topics, each with a full section of information.
-    Formatted as markdown without '```'
-  agent: reporting_analyst
+    A structured plain-text fundamental analysis with the 6 sections above.
+    Only include facts present in the search results. Note where data is missing.
+  agent: fundamental_analyst
+
+technical_task:
+  description: >
+    You are provided with live stock price data for {stock_symbol} fetched on {current_date}.
+    Analyse the data below and write a technical analysis covering:
+    - Short-term momentum (1W vs 1M performance)
+    - Medium-term trend (3M vs 6M performance)
+    - Long-term positioning (1Y, 2Y, 3Y, 5Y context)
+    - Moving average signal (50-day vs 200-day: golden cross or death cross)
+    - Key support level (near 52W Low) and resistance level (near 52W High)
+    - Volume trend: is average volume increasing or decreasing over time?
+
+    --- STOCK DATA START ---
+    {stock_data}
+    --- STOCK DATA END ---
+  expected_output: >
+    A structured plain-text technical analysis with a short-term, medium-term,
+    and long-term section, plus MA signal and key price levels. Use exact dollar
+    figures from the data. No tables — plain text paragraphs only.
+  agent: technical_analyst
+
+summary_task:
+  description: >
+    You will receive fundamental analysis and technical analysis as context.
+    Write a concise plain-text investment synthesis for {company} ({stock_symbol}).
+    Structure your response with these clearly labelled sections:
+
+    EXECUTIVE SUMMARY:
+    2-4 sentences capturing the single most important takeaway for an investor.
+
+    INVESTMENT OUTLOOK:
+    3-5 sentences combining insights from both the fundamental and technical analyses.
+    State whether the outlook is bullish, bearish, or neutral and why.
+
+    KEY RISKS:
+    - List 4-6 specific risks (regulatory, competitive, macro, technical)
+
+    Do NOT output HTML. Plain text only. Be concise and specific.
+  expected_output: >
+    Plain text with three sections labelled EXECUTIVE SUMMARY:, INVESTMENT OUTLOOK:,
+    and KEY RISKS: followed by bullet points. No HTML tags, no markdown fences.
+  agent: summary_analyst
+  context:
+    - fundamental_task
+    - technical_task

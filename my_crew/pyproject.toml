@@ -5,7 +5,9 @@ description = "my_crew using crewAI"
 authors = [{ name = "Your Name", email = "you@example.com" }]
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "crewai[tools]==1.11.1"
+    "crewai[anthropic,google-genai,litellm,tools]==1.11.1",
+    "yfinance>=0.2.40",
+    "ddgs>=1.0.0",
 ]
 
 [project.scripts]

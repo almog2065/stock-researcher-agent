@@ -1,63 +1,88 @@
-from crewai import Agent, Crew, Process, Task
+import os
+from datetime import datetime
+from crewai import Agent, Crew, LLM, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
-# If you want to run a snippet of code before or after the crew starts,
-# you can use the @before_kickoff and @after_kickoff decorators
-# https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
+
+
+def _log(msg: str) -> None:
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
+def _step_callback(step_output) -> None:
+    text = str(step_output)[:120].replace("\n", " ")
+    _log(f"  step → {text}…")
 
 @CrewBase
 class MyCrew():
-    """MyCrew crew"""
+    """Stock Researcher Crew"""
 
     agents: list[BaseAgent]
     tasks: list[Task]
 
-    # Learn more about YAML configuration files here:
-    # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
-    # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
-    
-    # If you would like to add tools to your agents, you can learn more about it here:
-    # https://docs.crewai.com/concepts/agents#agent-tools
-    @agent
-    def researcher(self) -> Agent:
-        return Agent(
-            config=self.agents_config['researcher'], # type: ignore[index]
-            verbose=True
+    @property
+    def _llm(self) -> LLM:
+        return LLM(
+            model=os.environ["OLLAMA_MODEL"],
+            base_url=os.environ["OLLAMA_URL"],
+            api_key=os.environ["OLLAMA_API_KEY"],
         )
 
     @agent
-    def reporting_analyst(self) -> Agent:
+    def fundamental_analyst(self) -> Agent:
         return Agent(
-            config=self.agents_config['reporting_analyst'], # type: ignore[index]
-            verbose=True
+            config=self.agents_config['fundamental_analyst'],
+            llm=self._llm,
+            tools=[],
+            verbose=True,
         )
 
-    # To learn more about structured task outputs,
-    # task dependencies, and task callbacks, check out the documentation:
-    # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    @task
-    def research_task(self) -> Task:
-        return Task(
-            config=self.tasks_config['research_task'], # type: ignore[index]
+    @agent
+    def technical_analyst(self) -> Agent:
+        return Agent(
+            config=self.agents_config['technical_analyst'],
+            llm=self._llm,
+            tools=[],
+            verbose=True,
+        )
+
+    @agent
+    def summary_analyst(self) -> Agent:
+        return Agent(
+            config=self.agents_config['summary_analyst'],
+            llm=self._llm,
+            tools=[],
+            verbose=True,
         )
 
     @task
-    def reporting_task(self) -> Task:
+    def fundamental_task(self) -> Task:
         return Task(
-            config=self.tasks_config['reporting_task'], # type: ignore[index]
-            output_file='report.md'
+            config=self.tasks_config['fundamental_task'],
+            callback=lambda o: _log("✅ fundamental_task complete"),
+        )
+
+    @task
+    def technical_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['technical_task'],
+            callback=lambda o: _log("✅ technical_task complete"),
+        )
+
+    @task
+    def summary_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['summary_task'],
+            callback=lambda o: _log("✅ summary_task complete"),
         )
 
     @crew
     def crew(self) -> Crew:
-        """Creates the MyCrew crew"""
-        # To learn how to add knowledge sources to your crew, check out the documentation:
-        # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
-
+        """Creates the Stock Researcher crew"""
         return Crew(
-            agents=self.agents, # Automatically created by the @agent decorator
-            tasks=self.tasks, # Automatically created by the @task decorator
+            agents=self.agents,
+            tasks=self.tasks,
             process=Process.sequential,
             verbose=True,
-            # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
+            step_callback=_step_callback,
         )
